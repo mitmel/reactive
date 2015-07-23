@@ -1,0 +1,82 @@
+//MIT Mobile Experience Lab
+//ReActive Innovation for Artisans project - Vibration sensor wall prototype
+//June 2015
+//Data visualization in Processing
+
+
+import processing.serial.*;
+
+Serial myPort;  // Create object from Serial class
+PImage bg;
+int[] serialInArray = new int[8]; // received data in bytes
+int serialCount = 0;     // count of bytes received
+
+int[] data = new int[4]; //data values
+
+boolean firstContact = false; //received?
+
+void setup() {
+  size(544, 770);
+  // The background image must be the same size as the parameters
+  // into the size() method. In this program, the size of the image
+  // is 640 x 360 pixels.
+  colorMode(HSB, 360);
+  bg = loadImage("meshbackground.png");
+  // Print a list of the serial ports
+  println(Serial.list());
+  String portName = Serial.list()[1]; //change the 0 to a 1 or 2 etc. to match your port
+  myPort = new Serial(this, portName, 9600); 
+}
+
+void draw() {
+  background(bg);
+  //A0
+  fill(data[3]*4,360,360);
+  ellipse(122,149,data[3],data[3]);
+  
+  //A1
+  fill(data[0]*4,360,360);
+  ellipse(393,149,data[0],data[0]);
+  
+  //A2
+  fill(data[2]*4,360,360);
+  ellipse(171,455,data[2],data[2]);
+  
+  //A3
+  fill(data[1]*4,360,360);
+  ellipse(467,457,data[1],data[1]);
+  
+  
+}
+
+void serialEvent(Serial myPort) {
+  //read a byte from the serial port
+  int inByte = myPort.read();
+  
+  if (firstContact == false) {
+  if (inByte == 'A') {
+    myPort.clear(); //clear serial buffer
+    firstContact = true; //receiving A means contact made
+    myPort.write('A'); //handshake
+  }
+  }
+  else {
+   // read latest byte
+   serialInArray[serialCount] = inByte;
+   serialCount++;
+   //8 bytes are being received
+   if (serialCount > 7) {
+     println("new vals");
+     for (int i = 0; i < 4;i++){
+     data[i] = serialInArray[i];
+     //print data
+     println(serialInArray[i]);
+     }
+     
+     //sending "A" requests new sensor readings
+     myPort.write('A');
+     //reset serialCount
+     serialCount= 0;
+   }
+  }
+}
