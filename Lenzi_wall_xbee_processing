@@ -1,0 +1,67 @@
+
+//MIT Mobile Experience Lab
+//ReActive Innovation for Artisans project - Vibration sensor wall prototype
+//June 2015
+//This code pushes the serial data to Processing for visualization
+
+#include <XBee.h>
+#include <SoftwareSerial.h>
+
+XBee xbee = XBee();
+ZBRxIoSampleResponse ZBSample = ZBRxIoSampleResponse();
+
+
+// Define NewSoftSerial TX/RX pins
+// Connect Arduino pin 8 to TX of usb-serial device
+uint8_t ssRX = 8;
+// Connect Arduino pin 9 to RX of usb-serial device
+uint8_t ssTX = 9;
+// Remember to connect all devices to a common Ground: XBee, Arduino and USB-Serial device
+SoftwareSerial nss(ssRX, ssTX);
+
+void setup() {
+     // start soft serial
+    nss.begin(9600);
+    xbee.begin(nss);
+      
+    Serial.begin(9600);
+    delay(3000);
+    
+    establishContact(); // send a byte to establish contact until receiver
+    // responds
+      
+    Serial.println("It has Begun");
+}
+
+int data[4];
+
+void loop() {
+
+  xbee.readPacket();
+
+  if (xbee.getResponse().isAvailable()) {
+    if (xbee.getResponse().getApiId() == ZB_IO_SAMPLE_RESPONSE) {
+
+      xbee.getResponse().getZBRxIoSampleResponse(ZBSample);
+
+      if (ZBSample.isAnalogEnabled(0)) {
+        for (int i =0; i < 4 ; i++){
+          data[i]= ZBSample.getAnalog(i);
+        }
+       
+        for (int i = 0; i < 4; i++){
+          Serial.write(data[i] % 256);
+        }
+        delay(1000);
+      }
+    }
+  }
+}
+  
+  
+void establishContact() {
+ while (Serial.available() <= 0) {
+ Serial.print('A'); // send a capital A
+ delay(300);
+ }
+}
